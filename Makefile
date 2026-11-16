@@ -8,7 +8,7 @@ KIT          := Packages/UltraShotKit
 # Development team for signing: $TEAM_ID, else the gitignored .team-id file. Never echoed.
 TEAM_ID ?= $(strip $(shell cat .team-id 2>/dev/null))
 
-.PHONY: gen build run test lint release publish clean
+.PHONY: gen build run test lint release publish sparkle-key clean
 
 gen:
 	xcodegen generate --spec project.yml
@@ -51,6 +51,12 @@ publish:
 	@test -n "$(VERSION)" || { echo "usage: make publish VERSION=x.y.z [YES=1] [DRY_RUN=1]"; exit 1; }
 	@echo "scripts/publish.sh (VERSION=$(VERSION) YES=$(YES) DRY_RUN=$(DRY_RUN))"
 	@TEAM_ID="$(TEAM_ID)" VERSION="$(VERSION)" YES="$(YES)" DRY_RUN="$(DRY_RUN)" scripts/publish.sh
+
+# Sparkle EdDSA key in the login keychain (account "ultrashot"): creates it on first use and
+# prints the public key (SUPublicEDKey in project.yml). The private key is never printed.
+sparkle-key:
+	@"$$(scripts/sparkle-tools.sh)/generate_keys" --account ultrashot >/dev/null 2>&1 || true
+	@"$$(scripts/sparkle-tools.sh)/generate_keys" --account ultrashot -p
 
 clean:
 	rm -rf build $(PROJECT) $(KIT)/.build

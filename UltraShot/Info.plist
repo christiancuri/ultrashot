@@ -30,5 +30,11 @@
 	<string>© Christian Curi</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>UltraShot records your microphone into screen recordings when you turn the microphone on.</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUFeedURL</key>
+	<string>https://github.com/christiancuri/ultrashot/releases/latest/download/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>SD0Zka1JJLvsemv4LgD2cc5GTJuwvQ1dL8OfjKyDlX4=</string>
 </dict>
 </plist>

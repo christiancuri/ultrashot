@@ -27,7 +27,24 @@ import UltraShotCore
 ///   after-capture actions per kind without touching the saved settings. `<flags>` is a
 ///   `+`-separated subset of `thumbnail`, `copy`, `save`, or `none`; a kind left out keeps
 ///   its settings.
+/// - `ULTRASHOT_DEBUG_FEED_URL=<url>`: Sparkle reads this appcast instead of `SUFeedURL`
+///   (e.g. a local feed listing a higher version, to test the update check).
 enum DebugAutomation {
+    /// Any `ULTRASHOT_DEBUG_*` switch (or `-debug-open`) is set: an automated run.
+    static var isActive: Bool {
+        #if DEBUG
+        let environment = ProcessInfo.processInfo.environment
+        return environment.contains { $0.key.hasPrefix("ULTRASHOT_DEBUG_") && !$0.value.isEmpty }
+            || UserDefaults.standard.string(forKey: "debug-open") != nil
+        #else
+        return false
+        #endif
+    }
+
+    static var updateFeedURL: String? {
+        value("ULTRASHOT_DEBUG_FEED_URL")
+    }
+
     static var autoSelectRect: CGRect? {
         guard let raw = value("ULTRASHOT_DEBUG_AUTOSELECT") else { return nil }
         let numbers = raw.split(separator: ",").compactMap { Double($0.trimmingCharacters(in: .whitespaces)) }

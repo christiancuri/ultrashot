@@ -2,6 +2,8 @@ import AppKit
 import SwiftUI
 
 struct AboutSettingsView: View {
+    @Environment(AppModel.self) private var model
+
     var body: some View {
         Form {
             Section {
@@ -26,6 +28,11 @@ struct AboutSettingsView: View {
                         .font(.callout)
                         .multilineTextAlignment(.center)
                         .foregroundStyle(.secondary)
+                    if model.updater.isAvailable {
+                        Button("Check for Updates…") { model.checkForUpdates() }
+                            .buttonStyle(.glassProminent)
+                            .padding(.top, 4)
+                    }
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
@@ -38,6 +45,6 @@ struct AboutSettingsView: View {
             }
         }
         .formStyle(.grouped)
-        .frame(height: 320)
+        .frame(height: 360)
     }
 }

@@ -3,7 +3,7 @@ import SwiftUI
 
 /// Opens the SwiftUI Settings window and the onboarding window from AppKit, and keeps the
 /// activation policy in sync: `.regular` (Dock icon, app menu, proper window ordering) while
-/// one of them is open, `.accessory` (menu bar only) once they close.
+/// one of them (or a Sparkle update window) is open, `.accessory` (menu bar only) once they close.
 ///
 /// Overlays, thumbnails and HUDs are borderless windows or panels and never count.
 @MainActor
@@ -34,7 +34,7 @@ final class WindowCoordinator {
 
     /// The Settings window, once SwiftUI has created it.
     var settingsWindow: NSWindow? {
-        NSApp.windows.first { Self.isAppWindow($0) && !Self.isOwnWindow($0) }
+        NSApp.windows.first { Self.isAppWindow($0) && !Self.isOwnWindow($0) && !Self.isSparkleWindow($0) }
     }
 
     func showSettings() {
@@ -91,6 +91,13 @@ final class WindowCoordinator {
     /// Windows UltraShot creates itself (identifier prefixed `ultrashot.`), i.e. not Settings.
     private static func isOwnWindow(_ window: NSWindow) -> Bool {
         window.identifier?.rawValue.hasPrefix("ultrashot.") == true
+    }
+
+    /// Sparkle's update windows (their controllers come from Sparkle.framework). They count as
+    /// app windows for the activation policy, but they are not Settings.
+    private static func isSparkleWindow(_ window: NSWindow) -> Bool {
+        guard let controller = window.windowController else { return false }
+        return Bundle(for: type(of: controller)).bundleIdentifier == "org.sparkle-project.Sparkle"
     }
 
     private func windowsChanged() {

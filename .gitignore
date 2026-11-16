@@ -14,3 +14,13 @@ build/
 
 # Signing: the development team id is local only
 .team-id
+
+# Secrets, signing material, Sparkle keys
+*.p12
+*.cer
+*.certSigningRequest
+*.mobileprovision
+*.provisionprofile
+secrets/
+*.pem
+*_private_key*

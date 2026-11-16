@@ -286,6 +286,18 @@ plist() { /usr/libexec/PlistBuddy -c "Print $1" "$APP/Contents/Info.plist"; }
 ARCHS_BUILT="$(lipo -archs "$APP/Contents/MacOS/$APP_NAME")"
 [[ "$ARCHS_BUILT" == "arm64" ]] || die "expected an arm64-only binary (got: $ARCHS_BUILT)"
 echo "Developer ID, hardened runtime, $ENTITLEMENT, $BUNDLE_ID $VERSION ($BUILD), $ARCHS_BUILT: OK"
+# Sparkle installs updates through these helpers: each must carry the app's Developer ID
+# signature and the hardened runtime, or notarization or the update itself fails.
+SPARKLE="$APP/Contents/Frameworks/Sparkle.framework/Versions/B"
+[[ -d "$SPARKLE" ]] || die "Sparkle.framework is missing from the app"
+for part in "$SPARKLE" "$SPARKLE/Autoupdate" "$SPARKLE/Updater.app" \
+  "$SPARKLE/XPCServices/Downloader.xpc" "$SPARKLE/XPCServices/Installer.xpc"; do
+  [[ -e "$part" ]] || die "Sparkle is missing ${part#"$SPARKLE"/}"
+  info="$(codesign -dvv "$part" 2>&1)"
+  [[ "$info" == *"Authority=Developer ID Application"* && "$info" == *"(runtime)"* ]] \
+    || die "Sparkle ${part#"$APP"/} is not Developer ID signed with the hardened runtime"
+done
+echo "Sparkle.framework, Autoupdate, Updater.app, Downloader.xpc, Installer.xpc: Developer ID + runtime OK"
 
 step "Creating $(basename "$DMG")"
 mkdir -p "$STAGE"

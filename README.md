@@ -22,6 +22,7 @@
 
 - Signed with a Developer ID and notarized by Apple, so it opens without Gatekeeper warnings.
 - It lives in the menu bar only, with no Dock icon.
+- Updates itself through [Sparkle](https://sparkle-project.org). You can turn automatic checks off in Settings › General.
 - On first launch, grant **Screen Recording** when asked. **Microphone** is only requested the first time you record with the mic on.
 - To use ⇧⌘3, ⇧⌘4 and ⇧⌘5, turn off the macOS screenshot shortcuts in System Settings › Keyboard › Keyboard Shortcuts › Screenshots. Settings › Shortcuts tells you when they are still on.
 
@@ -87,7 +88,7 @@ Every global shortcut can be changed in Settings › Shortcuts.
 
 ## Privacy
 
-- **No accounts, no cloud, no analytics.** UltraShot makes no network requests.
+- **No accounts, no cloud, no analytics.** The only network request UltraShot makes is the update check against this repository's GitHub Releases (turn it off in Settings › General).
 - Captures stay on your Mac. Unsaved files live in `~/Library/Caches/dev.christiancuri.ultrashot/Captures/` and are deleted when their thumbnail closes, with leftovers cleaned up at launch.
 - Settings are stored in `~/Library/Application Support/dev.christiancuri.ultrashot/settings.json`.
 - UltraShot's own windows (overlay, thumbnails, HUD) are excluded from your captures and recordings.
@@ -110,6 +111,7 @@ Screen Recording permission is tied to the code signature, so Debug builds are s
 | `make run` | `make build`, then open the app |
 | `make test` | Run the `UltraShotKit` test suite (`swift test`) |
 | `make lint` | `swiftlint lint --strict` |
+| `make sparkle-key` | Create (first use) and print the Sparkle EdDSA public key |
 | `make clean` | Remove `build/`, the generated project and the package build |
 
 Debug builds use ⌃ on top of the default shortcuts (⌃⇧⌘3, ⌃⇧⌘4, ⌃⌥⇧⌘4, ⌃⌥⇧⌘5) so they can run next to another screenshot app. They also accept environment switches that drive every flow end to end over a synthetic desktop, for QA and screenshots: see [`docs/debug-automation.md`](docs/debug-automation.md).
@@ -133,13 +135,14 @@ UltraShot/               The app (AppKit + SwiftUI)
   Recording/             Record panel, HUD and recording flow
   Settings/              General, Shortcuts, Quick Access, Screenshots, Recording, About
   Onboarding/            Screen Recording permission
+  Updates/               Sparkle updater
 Packages/UltraShotKit/   All logic and its tests
   UltraShotCore          Settings, capture store, file naming, delivery rules
   CaptureKit             ScreenCaptureKit stills, window list, cropping, encoding
   AnnotateKit            Annotation model, renderer, hit-testing, undo
   RecordingKit           SCStream + AVAssetWriter recorder
 Branding/                Icon sources, DMG background and volume icon
-scripts/                 release.sh, publish.sh
+scripts/                 release.sh, publish.sh, sparkle-tools.sh
 project.yml              XcodeGen spec
 ```
 
@@ -150,21 +153,25 @@ Releases are tagged `v<x.y.z>` and published as GitHub Releases. The build numbe
 ```sh
 make release VERSION=0.2.0              # signed, notarized and stapled DMG + zip + checksums in build/release/dist
 make publish VERSION=0.2.0 DRY_RUN=1    # preview the whole publish without building or uploading
-make publish VERSION=0.2.0              # build, tag, push and create the release
+make publish VERSION=0.2.0              # build, extend the Sparkle appcast, tag, push and create the release
 ```
 
-Before publishing, add a `## 0.2.0` section to [`CHANGELOG.md`](CHANGELOG.md): it becomes the GitHub Release notes. `make publish` runs on a clean `main` that matches `origin/main`.
+Before publishing, add a `## 0.2.0` section to [`CHANGELOG.md`](CHANGELOG.md): it becomes both the GitHub Release notes and the Sparkle update notes. `make publish` runs on a clean `main` that matches `origin/main`.
+
+Every release carries the full Sparkle appcast (`appcast.xml`, all versions, newest first) as an asset, so the app's feed is always `https://github.com/christiancuri/ultrashot/releases/latest/download/appcast.xml`. Each item points at that version's DMG and is signed with the EdDSA key.
 
 One-time setup:
 
 - A Developer ID signing identity for your team (`TEAM_ID` or `.team-id`). Xcode's cloud-managed signing works.
 - A notarytool keychain profile named `apple-notary` (`xcrun notarytool store-credentials apple-notary ...`). Override it with `NOTARY_PROFILE`.
+- The Sparkle EdDSA key in the login keychain under the account `ultrashot`. `make sparkle-key` prints the public key (`SUPublicEDKey` in `project.yml`) and creates the key on first use. Back up the private key safely: without it, existing installs can't verify new updates.
 
 See [`scripts/release.sh`](scripts/release.sh) and [`scripts/publish.sh`](scripts/publish.sh) for every step and environment variable.
 
 ## Acknowledgements
 
 - [KeyboardShortcuts](https://github.com/sindresorhus/KeyboardShortcuts) by Sindre Sorhus.
+- [Sparkle](https://sparkle-project.org) for updates.
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen) and [SwiftLint](https://github.com/realm/SwiftLint).
 
 ## License

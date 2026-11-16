@@ -140,6 +140,11 @@ final class StatusItemManager: NSObject {
         menu.addItem(item(recordTitle, symbol: recordSymbol, shortcut: .recordScreen) { recording.recordScreen() })
         menu.addItem(.separator())
         menu.addItem(item("Settings…", key: ",", symbol: "gearshape") { [weak self] in self?.model.openSettings() })
+        if let version = model.updater.availableUpdateVersion {
+            menu.addItem(item("Update to \(version)…", symbol: "arrow.down.circle.fill") { [weak self] in self?.model.checkForUpdates() })
+        } else if model.updater.isAvailable {
+            menu.addItem(item("Check for Updates…", symbol: "arrow.down.circle") { [weak self] in self?.model.checkForUpdates() })
+        }
         menu.addItem(.separator())
         menu.addItem(item("Quit UltraShot", key: "q", symbol: "power") { [weak self] in self?.model.quit() })
         return menu

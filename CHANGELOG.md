@@ -1,7 +1,12 @@
 # Changelog
 
 All notable changes to UltraShot. Each `## <version>` section is used as the
-GitHub Release notes by `make publish`.
+GitHub Release notes and the in-app (Sparkle) update notes.
+
+## 0.2.0
+
+- **Automatic updates** through Sparkle: UltraShot checks this repository's GitHub Releases and offers new versions. Turn automatic checks off in Settings › General, or check any time with **Check for Updates…** in the menu bar menu.
+- Coming from 0.1.0? Download 0.2.0 manually once; later versions arrive on their own.
 
 ## 0.1.0
 

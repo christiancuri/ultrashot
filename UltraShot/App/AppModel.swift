@@ -15,7 +15,7 @@ enum SettingsTab: String, CaseIterable, Hashable, Sendable {
 /// App-level state shared by the menu bar, Settings and the feature coordinators.
 ///
 /// Owns the persisted ``Settings`` (saved on every change), the small ``AppState``, the
-/// ``CaptureStore`` and one coordinator per feature. Coordinators reach back through their
+/// ``CaptureStore``, the Sparkle ``Updater`` and one coordinator per feature. Coordinators reach back through their
 /// `weak var model`, which is set right after they are created.
 @MainActor
 @Observable
@@ -56,12 +56,14 @@ final class AppModel {
     let thumbnails: ThumbnailCoordinator
     let recording: RecordingCoordinator
     let annotation: AnnotationCoordinator
+    let updater: Updater
 
     @ObservationIgnored var actions = Actions()
 
-    init(settingsStore: SettingsStore = .standard(), captureStore: CaptureStore = .standard()) {
+    init(settingsStore: SettingsStore = .standard(), captureStore: CaptureStore = .standard(), updater: Updater = Updater()) {
         self.settingsStore = settingsStore
         self.captureStore = captureStore
+        self.updater = updater
         settings = settingsStore.loadSettings()
         appState = settingsStore.loadState()
         capture = CaptureCoordinator()
@@ -83,6 +85,11 @@ final class AppModel {
 
     func showOnboarding() {
         actions.showOnboarding()
+    }
+
+    func checkForUpdates() {
+        NSApp.activate()
+        updater.checkForUpdates()
     }
 
     func quit() {

@@ -12,6 +12,7 @@ struct GeneralSettingsView: View {
 
     var body: some View {
         @Bindable var model = model
+        @Bindable var updater = model.updater
         Form {
             Section("Startup") {
                 Toggle("Launch at login", isOn: Binding(
@@ -55,9 +56,18 @@ struct GeneralSettingsView: View {
                 Text("Files that are not saved are deleted when their thumbnail closes.")
                     .foregroundStyle(.secondary)
             }
+
+            if model.updater.isAvailable {
+                Section("Updates") {
+                    Toggle("Check for updates automatically", isOn: $updater.automaticallyChecksForUpdates)
+                    LabeledContent("Version \(Bundle.main.shortVersion)") {
+                        Button("Check Now") { model.checkForUpdates() }
+                    }
+                }
+            }
         }
         .formStyle(.grouped)
-        .frame(height: 470)
+        .frame(height: 600)
         .onAppear(perform: readLoginItemStatus)
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             readLoginItemStatus()

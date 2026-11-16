@@ -14,6 +14,10 @@ options:
 packages:
   UltraShotKit:
     path: Packages/UltraShotKit
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    # Keep in sync with SPARKLE_VERSION in scripts/sparkle-tools.sh.
+    exactVersion: 2.10.0
   KeyboardShortcuts:
     url: https://github.com/sindresorhus/KeyboardShortcuts
     exactVersion: 3.1.0
@@ -34,7 +38,8 @@ settings:
     DEVELOPMENT_TEAM: "$(TEAM_ID)"
     ENABLE_HARDENED_RUNTIME: "YES"
     DEAD_CODE_STRIPPING: "YES"
-    MARKETING_VERSION: "0.1.0"
+    MARKETING_VERSION: "0.2.0"
+    # Placeholder for local builds; Release builds fail with it (see preBuildScripts).
     CURRENT_PROJECT_VERSION: "1"
 
 targets:
@@ -55,7 +60,18 @@ targets:
         product: AnnotateKit
       - package: UltraShotKit
         product: RecordingKit
+      - package: Sparkle
       - package: KeyboardShortcuts
+    preBuildScripts:
+      # Sparkle compares CFBundleVersion: a Release build must carry a real, growing build
+      # number. scripts/release.sh passes CURRENT_PROJECT_VERSION=<git commit count>.
+      - name: Require release build number
+        basedOnDependencyAnalysis: false
+        script: |
+          if [ "$CONFIGURATION" = "Release" ] && [ "$CURRENT_PROJECT_VERSION" = "1" ]; then
+            echo "error: Release builds need a real build number. Use scripts/release.sh (or make release), which sets CURRENT_PROJECT_VERSION to the git commit count."
+            exit 1
+          fi
     settings:
       base:
         PRODUCT_NAME: UltraShot
@@ -77,10 +93,15 @@ targets:
         LSUIElement: true
         NSHumanReadableCopyright: © Christian Curi
         NSMicrophoneUsageDescription: UltraShot records your microphone into screen recordings when you turn the microphone on.
+        SUFeedURL: https://github.com/christiancuri/ultrashot/releases/latest/download/appcast.xml
+        # EdDSA public key; the private key lives in the login keychain (`make sparkle-key`).
+        SUPublicEDKey: SD0Zka1JJLvsemv4LgD2cc5GTJuwvQ1dL8OfjKyDlX4=
+        SUEnableAutomaticChecks: true
     entitlements:
       path: UltraShot/UltraShot.entitlements
       properties:
-        # Not sandboxed. Hardened runtime needs this to capture the microphone.
+        # Not sandboxed (Sparkle replaces the app bundle in place on update). Hardened runtime
+        # needs this to capture the microphone.
         com.apple.security.device.audio-input: true
 
 schemes:

@@ -10,7 +10,8 @@ import AppKit
 /// `-debug-open <name>` (or env `ULTRASHOT_DEBUG_OPEN`), one of: `settings`,
 /// `settings:<tab>` (general, shortcuts, quickAccess, screenshots, recording, about),
 /// `onboarding`, `capture-area`, `capture-fullscreen`, `capture-window`,
-/// `capture-annotate`, `record`, `record-panel`, `thumbnail-sample`, `annotate-sample`, `overlay-sample`.
+/// `capture-annotate`, `record`, `record-panel`, `thumbnail-sample`, `annotate-sample`, `overlay-sample`,
+/// `check-updates` (with `ULTRASHOT_DEBUG_FEED_URL`, see ``DebugAutomation``).
 ///
 /// Environment flags:
 /// - `ULTRASHOT_DEBUG_FAKE_SNAPSHOT=1`: capture flows use ``fakeSnapshotImage(size:scale:)``
@@ -101,6 +102,7 @@ enum DebugLaunchHooks {
         case "thumbnail-sample": model.thumbnails.debugShowSample()
         case "annotate-sample": model.annotation.debugShowSample()
         case "overlay-sample": showOverlaySample()
+        case "check-updates": model.checkForUpdates()
         default: Log.app.error("debug-open: unknown surface \(name, privacy: .public)")
         }
     }

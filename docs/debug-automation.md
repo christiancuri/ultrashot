@@ -14,7 +14,7 @@ ULTRASHOT_DEBUG_EXPORT_DIR=/tmp/ultrashot-export "$APP"
 
 | Variable | Effect |
 |---|---|
-| `ULTRASHOT_DEBUG_OPEN=<surface>` (or `-debug-open <surface>`) | Opens a surface at launch: `settings`, `settings:<tab>` (general, shortcuts, quickAccess, screenshots, recording, about), `onboarding`, `capture-area`, `capture-fullscreen`, `capture-window`, `capture-annotate`, `record`, `record-panel`, `thumbnail-sample`, `annotate-sample` or `overlay-sample`. |
+| `ULTRASHOT_DEBUG_OPEN=<surface>` (or `-debug-open <surface>`) | Opens a surface at launch: `settings`, `settings:<tab>` (general, shortcuts, quickAccess, screenshots, recording, about), `onboarding`, `capture-area`, `capture-fullscreen`, `capture-window`, `capture-annotate`, `record`, `record-panel`, `thumbnail-sample`, `annotate-sample`, `overlay-sample` or `check-updates` (a user-initiated Sparkle check; pair it with `ULTRASHOT_DEBUG_FEED_URL`). |
 | `ULTRASHOT_DEBUG_REPEAT=<n>`, `ULTRASHOT_DEBUG_REPEAT_INTERVAL=<s>` | Opens the surface `n` times, `s` seconds apart (default 4). Useful for memory checks. |
 | `ULTRASHOT_DEBUG_QUIT_AFTER=<s>` | Quits through the real quit path (`NSApp.terminate`) after `s` seconds. |
 | `ULTRASHOT_DEBUG_FAKE_SNAPSHOT=1` | Capture flows use a synthetic desktop instead of the real screen. |
@@ -42,6 +42,7 @@ ULTRASHOT_DEBUG_EXPORT_DIR=/tmp/ultrashot-export "$APP"
 | `ULTRASHOT_DEBUG_AUTOINTERRUPT=<ms>` | Halfway through, the stream acts as if it stopped by itself, and Stop is pressed `ms` later. |
 | `ULTRASHOT_DEBUG_AUTOSTOP_MS=<ms>` | Presses Record Screen `ms` after committing the selection, while the recorder is still starting. |
 | `ULTRASHOT_DEBUG_WINDOWMODE="x,y"` | With `record-panel`, turns on window-pick mode hovering that point. |
+| `ULTRASHOT_DEBUG_FEED_URL=<url>` | Sparkle reads this appcast instead of `SUFeedURL`, e.g. a local feed that lists a higher version, to test the update check. Without it, automation runs (any `ULTRASHOT_DEBUG_*` switch) don't start the updater, so no update window appears mid-run. |
 
 Automation runs should use the fake snapshot, the debug pasteboard and a scratch export
 folder. If a run captures the real screen, check the results from logs and file metadata

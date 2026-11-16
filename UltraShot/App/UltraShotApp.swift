@@ -16,6 +16,10 @@ struct UltraShotApp: App {
             CommandGroup(replacing: .appInfo) {
                 Button("About UltraShot") { appDelegate.model.openSettings(.about) }
             }
+            CommandGroup(after: .appInfo) {
+                Button("Check for Updates…") { appDelegate.model.checkForUpdates() }
+                    .disabled(!appDelegate.model.updater.isAvailable)
+            }
         }
     }
 }
