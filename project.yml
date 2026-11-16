@@ -1,0 +1,94 @@
+# UltraShot for macOS — XcodeGen spec. Single source of truth for identifiers, signing,
+# entitlements and Info.plist keys. Run `make gen` after editing; never edit the generated
+# UltraShot.xcodeproj (it is gitignored).
+name: UltraShot
+
+options:
+  bundleIdPrefix: dev.christiancuri
+  deploymentTarget:
+    macOS: "26.0"
+  createIntermediateGroups: true
+  groupSortPosition: top
+  generateEmptyDirectories: false
+
+packages:
+  UltraShotKit:
+    path: Packages/UltraShotKit
+  KeyboardShortcuts:
+    url: https://github.com/sindresorhus/KeyboardShortcuts
+    exactVersion: 3.1.0
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    SWIFT_STRICT_CONCURRENCY: complete
+    ARCHS: arm64
+    EXCLUDED_ARCHS: x86_64
+    ONLY_ACTIVE_ARCH: "YES"
+    MACOSX_DEPLOYMENT_TARGET: "26.0"
+    # No team in the repo: `make build` passes DEVELOPMENT_TEAM (from $TEAM_ID or the
+    # gitignored .team-id file) on the xcodebuild command line. Screen Recording grants are
+    # tied to the code signature, so Debug builds are signed too.
+    CODE_SIGN_STYLE: Automatic
+    CODE_SIGN_IDENTITY: Apple Development
+    DEVELOPMENT_TEAM: "$(TEAM_ID)"
+    ENABLE_HARDENED_RUNTIME: "YES"
+    DEAD_CODE_STRIPPING: "YES"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+
+targets:
+  UltraShot:
+    type: application
+    platform: macOS
+    sources:
+      - path: UltraShot
+        excludes:
+          - Info.plist
+          - UltraShot.entitlements
+    dependencies:
+      - package: UltraShotKit
+        product: UltraShotCore
+      - package: UltraShotKit
+        product: CaptureKit
+      - package: UltraShotKit
+        product: AnnotateKit
+      - package: UltraShotKit
+        product: RecordingKit
+      - package: KeyboardShortcuts
+    settings:
+      base:
+        PRODUCT_NAME: UltraShot
+        PRODUCT_MODULE_NAME: UltraShot
+        PRODUCT_BUNDLE_IDENTIFIER: dev.christiancuri.ultrashot
+        # UltraShot/AppIcon.icon (Icon Composer); regenerate with Branding/render-app-icon.sh.
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        COMBINE_HIDPI_IMAGES: "YES"
+        ENABLE_PREVIEWS: "YES"
+    info:
+      path: UltraShot/Info.plist
+      properties:
+        CFBundleDisplayName: UltraShot
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        LSApplicationCategoryType: public.app-category.productivity
+        LSMinimumSystemVersion: $(MACOSX_DEPLOYMENT_TARGET)
+        # Menu bar only. The app turns into a regular (Dock) app while Settings is open.
+        LSUIElement: true
+        NSHumanReadableCopyright: © Christian Curi
+        NSMicrophoneUsageDescription: UltraShot records your microphone into screen recordings when you turn the microphone on.
+    entitlements:
+      path: UltraShot/UltraShot.entitlements
+      properties:
+        # Not sandboxed. Hardened runtime needs this to capture the microphone.
+        com.apple.security.device.audio-input: true
+
+schemes:
+  UltraShot:
+    build:
+      targets:
+        UltraShot: all
+    run:
+      config: Debug
+    archive:
+      config: Release
