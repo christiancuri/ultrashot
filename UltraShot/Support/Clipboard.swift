@@ -1,6 +1,5 @@
 import AppKit
-import ImageIO
-import UniformTypeIdentifiers
+import CaptureKit
 
 /// Writes captures to a pasteboard.
 ///
@@ -32,41 +31,54 @@ struct Clipboard {
         pasteboard.name == Self.debugPasteboardName
     }
 
-    /// Puts the image file at `url` on the pasteboard as PNG and TIFF data (no file URL).
-    /// The color profile and DPI are kept.
-    func writeImage(contentsOf url: URL) throws {
-        let data = try Data(contentsOf: url)
-        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
-              CGImageSourceGetCount(source) > 0 else {
-            throw CocoaError(.fileReadCorruptFile)
+    /// Puts the image file at `url` on the pasteboard as PNG and TIFF data (no file URL),
+    /// keeping the color profile and DPI.
+    ///
+    /// The file is read before this returns (it may be deleted right after). Building the TIFF
+    /// (and the PNG, for a JPEG file) runs off the main actor; the pasteboard is written when it
+    /// is done, then `completion` runs. A newer write that lands first wins: this one is dropped.
+    func writeImage(contentsOf url: URL, completion: @escaping @MainActor () -> Void = {}) throws {
+        let fileData = try Data(contentsOf: url)
+        let write = Self.beginWrite()
+        Task { @MainActor in
+            let image: PasteboardImage
+            do {
+                image = try await PerfTrace.measure("clipboard.encode (background)") {
+                    try await Task.detached(priority: .userInitiated) { try PasteboardImage(fileData: fileData) }.value
+                }
+            } catch {
+                Log.app.error("copy failed: \(error.localizedDescription, privacy: .public)")
+                return
+            }
+            guard write == Self.writeCount else {
+                Log.app.info("clipboard: image dropped, a newer write came first")
+                return
+            }
+            PerfTrace.measure("clipboard.write") {
+                let item = NSPasteboardItem()
+                item.setData(image.png, forType: .png)
+                item.setData(image.tiff, forType: .tiff)
+                pasteboard.clearContents()
+                pasteboard.writeObjects([item])
+            }
+            Log.app.info("clipboard: image \(image.png.count) B png, \(image.tiff.count) B tiff (debug pasteboard: \(isDebugPasteboard))")
+            completion()
         }
-        let isPNG = (CGImageSourceGetType(source) as String?) == UTType.png.identifier
-        guard let png = isPNG ? data : Self.convert(source, to: .png),
-              let tiff = Self.convert(source, to: .tiff) else {
-            throw CocoaError(.fileWriteUnknown)
-        }
-        let item = NSPasteboardItem()
-        item.setData(png, forType: .png)
-        item.setData(tiff, forType: .tiff)
-        pasteboard.clearContents()
-        pasteboard.writeObjects([item])
-        Log.app.info("clipboard: image \(png.count) B png, \(tiff.count) B tiff (debug pasteboard: \(isDebugPasteboard))")
     }
 
     /// Puts a file reference on the pasteboard (recordings).
     func writeFileURL(_ url: URL) {
+        _ = Self.beginWrite()
         pasteboard.clearContents()
         pasteboard.writeObjects([url as NSURL])
         Log.app.info("clipboard: file reference \(url.lastPathComponent, privacy: .private) (debug pasteboard: \(isDebugPasteboard))")
     }
 
-    /// Re-encodes the first image of `source` as `type`, keeping its metadata (DPI, profile).
-    private static func convert(_ source: CGImageSource, to type: UTType) -> Data? {
-        let output = NSMutableData()
-        guard let destination = CGImageDestinationCreateWithData(output as CFMutableData, type.identifier as CFString, 1, nil) else {
-            return nil
-        }
-        CGImageDestinationAddImageFromSource(destination, source, 0, nil)
-        return CGImageDestinationFinalize(destination) ? output as Data : nil
+    /// Every write takes a number; an image write only lands if no write started after it.
+    private static var writeCount = 0
+
+    private static func beginWrite() -> Int {
+        writeCount += 1
+        return writeCount
     }
 }

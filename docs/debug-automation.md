@@ -42,6 +42,9 @@ ULTRASHOT_DEBUG_EXPORT_DIR=/tmp/ultrashot-export "$APP"
 | `ULTRASHOT_DEBUG_AUTOINTERRUPT=<ms>` | Halfway through, the stream acts as if it stopped by itself, and Stop is pressed `ms` later. |
 | `ULTRASHOT_DEBUG_AUTOSTOP_MS=<ms>` | Presses Record Screen `ms` after committing the selection, while the recorder is still starting. |
 | `ULTRASHOT_DEBUG_WINDOWMODE="x,y"` | With `record-panel`, turns on window-pick mode hovering that point. |
+| `ULTRASHOT_DEBUG_MIC_MENU=1` | With `record-panel`, opens the panel's microphone menu 1.5 s after the panel appears. Menu tracking blocks `ULTRASHOT_DEBUG_QUIT_AFTER`, so stop the app with `kill`. |
+| `ULTRASHOT_DEBUG_MIC=on\|off`, `ULTRASHOT_DEBUG_MIC_DEVICE=<uniqueID>\|default\|non-default\|missing` | Override the microphone toggle and device for the panel, Settings › Recording and recordings, without saving them. `non-default` is the first connected input that isn't the system default; `missing` is a device that isn't connected (shown as "Debug Microphone (disconnected)"; recordings fall back to the system default). With the mic on, a recording asks for microphone access if it was never granted. |
+| `ULTRASHOT_DEBUG_STALLS=1` | From the first capture on, a watchdog thread pings the main thread every 16 ms and logs (category `perf`) every stall over 50 ms with the capture phases that ran during it. Capture phases are timed in every Debug build (`phase <name> <ms> ms`). |
 | `ULTRASHOT_DEBUG_FEED_URL=<url>` | Sparkle reads this appcast instead of `SUFeedURL`, e.g. a local feed that lists a higher version, to test the update check. Without it, automation runs (any `ULTRASHOT_DEBUG_*` switch) don't start the updater, so no update window appears mid-run. |
 
 Automation runs should use the fake snapshot, the debug pasteboard and a scratch export

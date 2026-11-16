@@ -120,7 +120,7 @@ public struct QuickAccessSettings: Codable, Sendable, Equatable, Hashable {
         didSet { overlaySize = Normalize.clamp(overlaySize, to: Self.overlaySizeRange) }
     }
     public var autoClose = true
-    public var autoCloseAction: AutoCloseAction = .close
+    public var autoCloseAction: AutoCloseAction = .saveAndClose
     /// Seconds before auto-close; snapped to the nearest of ``autoCloseIntervals`` when set or decoded.
     public var autoCloseInterval: Int = 30 {
         didSet { autoCloseInterval = Normalize.snap(autoCloseInterval, to: Self.autoCloseIntervals) }
@@ -207,6 +207,8 @@ public struct RecordingSettings: Codable, Sendable, Equatable, Hashable {
     public var microphone = false
     /// Selected microphone (`AVCaptureDevice.uniqueID`); `nil` means the system default.
     public var microphoneDeviceID: String?
+    /// Name of ``microphoneDeviceID`` when it was picked, to label it while it's disconnected.
+    public var microphoneDeviceName: String?
     /// Record Retina displays at 1x.
     public var downscaleRetina = false
     /// Pre-select the previous recording area (see ``AppState/lastRecordingArea``).
@@ -219,6 +221,7 @@ public struct RecordingSettings: Codable, Sendable, Equatable, Hashable {
         case systemAudio
         case microphone
         case microphoneDeviceID
+        case microphoneDeviceName
         case downscaleRetina
         case rememberLastArea
     }
@@ -233,11 +236,12 @@ public struct RecordingSettings: Codable, Sendable, Equatable, Hashable {
         systemAudio = container.lenient(Bool.self, forKey: .systemAudio) ?? defaults.systemAudio
         microphone = container.lenient(Bool.self, forKey: .microphone) ?? defaults.microphone
         microphoneDeviceID = container.lenient(String.self, forKey: .microphoneDeviceID) ?? defaults.microphoneDeviceID
+        microphoneDeviceName = container.lenient(String.self, forKey: .microphoneDeviceName) ?? defaults.microphoneDeviceName
         downscaleRetina = container.lenient(Bool.self, forKey: .downscaleRetina) ?? defaults.downscaleRetina
         rememberLastArea = container.lenient(Bool.self, forKey: .rememberLastArea) ?? defaults.rememberLastArea
     }
 
-    /// Writes every key, including `microphoneDeviceID` as `null` when unset.
+    /// Writes every key, including the microphone device id and name as `null` when unset.
     public func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(frameRate, forKey: .frameRate)
@@ -245,6 +249,7 @@ public struct RecordingSettings: Codable, Sendable, Equatable, Hashable {
         try container.encode(systemAudio, forKey: .systemAudio)
         try container.encode(microphone, forKey: .microphone)
         try container.encode(microphoneDeviceID, forKey: .microphoneDeviceID)
+        try container.encode(microphoneDeviceName, forKey: .microphoneDeviceName)
         try container.encode(downscaleRetina, forKey: .downscaleRetina)
         try container.encode(rememberLastArea, forKey: .rememberLastArea)
     }

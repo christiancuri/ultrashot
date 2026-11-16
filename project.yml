@@ -38,7 +38,7 @@ settings:
     DEVELOPMENT_TEAM: "$(TEAM_ID)"
     ENABLE_HARDENED_RUNTIME: "YES"
     DEAD_CODE_STRIPPING: "YES"
-    MARKETING_VERSION: "0.2.0"
+    MARKETING_VERSION: "0.2.1"
     # Placeholder for local builds; Release builds fail with it (see preBuildScripts).
     CURRENT_PROJECT_VERSION: "1"
 

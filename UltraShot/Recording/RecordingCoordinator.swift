@@ -236,7 +236,7 @@ final class RecordingCoordinator {
             recorderStateChanged(recorderState, for: recording)
         }
 
-        let settings = model.settings.recording
+        let settings = model.settings.recording.withDebugMicrophoneOverrides
         let microphone = settings.microphone ? await Self.microphoneAllowed() : false
         guard active === recording, !recording.isEnding else { return } // cancelled during the prompt
         let configuration: RecordingConfiguration
@@ -247,7 +247,7 @@ final class RecordingCoordinator {
                 showsCursor: settings.showCursor,
                 capturesSystemAudio: settings.systemAudio,
                 capturesMicrophone: microphone,
-                microphoneDeviceID: settings.microphoneDeviceID,
+                microphoneDeviceID: microphone ? Self.microphoneDeviceID(for: settings) : nil,
                 scale: request.scale,
                 excludedWindowIDs: hud.windowIDs,
                 outputURL: try model.captureStore.makeTemporaryURL(kind: .recording, ext: "mp4")
@@ -386,6 +386,22 @@ final class RecordingCoordinator {
             Log.recording.notice("microphone permission denied: recording without the microphone")
             return false
         }
+    }
+
+    /// The saved microphone when it's connected, else `nil` (the system default) for this
+    /// recording only: the saved choice is kept for when the device comes back.
+    private static func microphoneDeviceID(for settings: RecordingSettings) -> String? {
+        let devices = ScreenRecorder.availableMicrophones()
+        let names = devices.map { "\($0.name) [\($0.id)]" }.joined(separator: ", ")
+        Log.recording.info("microphone: \(devices.count) input devices: \(names, privacy: .public)")
+        let resolution = MicrophoneSelection.resolve(savedID: settings.microphoneDeviceID, available: devices)
+        if resolution.isSavedDeviceMissing {
+            Log.recording.notice(
+                "microphone: saved device \(settings.microphoneDeviceID ?? "", privacy: .public) is not connected: using the system default"
+            )
+        }
+        Log.recording.info("microphone: effective device \(resolution.effectiveDeviceID ?? "system default", privacy: .public)")
+        return resolution.effectiveDeviceID
     }
 
     static func screen(for displayID: CGDirectDisplayID) -> NSScreen? {

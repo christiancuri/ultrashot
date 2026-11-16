@@ -37,12 +37,13 @@ final class CaptureCoordinator {
     /// Captures the display under the pointer right away, without an overlay.
     func captureFullscreen() {
         guard model?.canBeginModalFlow("capture fullscreen") == true else { return }
+        PerfTrace.startStallWatchdogIfRequested()
         isStarting = true
         Task { @MainActor in
             defer { isStarting = false }
             let mouse = NSEvent.mouseLocation
             guard let screen = NSScreen.screens.first(where: { NSMouseInRect(mouse, $0.frame, false) }) ?? NSScreen.screens.first,
-                  let snapshot = await snapshots(of: [screen])?[screen.displayID] else { return }
+                  let snapshot = await PerfTrace.measure("snapshots", { await snapshots(of: [screen]) })?[screen.displayID] else { return }
             playShutter()
             await output(snapshot.image, scale: snapshot.pixelsPerPoint.width, label: "fullscreen")
         }
@@ -57,17 +58,19 @@ final class CaptureCoordinator {
 
     private func begin(_ intent: CaptureSession.Intent) {
         guard model?.canBeginModalFlow("capture") == true else { return }
+        PerfTrace.startStallWatchdogIfRequested()
         isStarting = true
         let start = ContinuousClock.now
         Task { @MainActor [weak self] in
             guard let self else { return }
             defer { isStarting = false }
-            guard let snapshots = await snapshots(of: NSScreen.screens), !snapshots.isEmpty else { return }
+            let snapshots = await PerfTrace.measure("snapshots") { await snapshots(of: NSScreen.screens) }
+            guard let snapshots, !snapshots.isEmpty else { return }
             let snapshotTime = ContinuousClock.now - start
-            let session = CaptureSession(intent: intent, snapshots: snapshots)
+            let session = PerfTrace.measure("overlay.create") { CaptureSession(intent: intent, snapshots: snapshots) }
             session.onFinish = { [weak self] result in self?.finish(result, intent: intent) }
             self.session = session
-            session.show()
+            PerfTrace.measure("overlay.show") { session.show() }
             let total = ContinuousClock.now - start
             let fake = DebugLaunchHooks.useFakeSnapshot
             let snapshotMS = Self.milliseconds(snapshotTime)
@@ -81,7 +84,7 @@ final class CaptureCoordinator {
         case .cancelled:
             Log.capture.info("capture cancelled")
         case let .area(screen, rect, snapshot):
-            guard let image = snapshot.crop(toLocalRect: rect) else {
+            guard let image = PerfTrace.measure("crop", { snapshot.crop(toLocalRect: rect) }) else {
                 Log.capture.error("crop failed for \(String(describing: rect), privacy: .public)")
                 return
             }
@@ -132,10 +135,13 @@ final class CaptureCoordinator {
     private func output(_ image: CGImage, scale: CGFloat, label: String) async {
         guard let model else { return }
         do {
-            let written = try await CaptureOutput.write(image, scale: scale, settings: model.settings.screenshots, store: model.captureStore)
+            let settings = model.settings.screenshots
+            let written = try await PerfTrace.measure("encode") {
+                try await CaptureOutput.write(image, scale: scale, settings: settings, store: model.captureStore)
+            }
             let name = written.url.lastPathComponent
             Log.capture.info("\(label, privacy: .public) capture \(written.pixelWidth)x\(written.pixelHeight) -> \(name, privacy: .public)")
-            model.deliver(CapturedItem(screenshot: written))
+            PerfTrace.measure("deliver") { model.deliver(CapturedItem(screenshot: written)) }
         } catch {
             report(error, while: "\(label) capture")
         }
@@ -192,7 +198,8 @@ final class CaptureCoordinator {
     }
 
     private func playShutter() {
-        if model?.settings.general.playSounds == true { ShutterSound.play() }
+        guard model?.settings.general.playSounds == true else { return }
+        PerfTrace.measure("shutter") { ShutterSound.play() }
     }
 
     private static func milliseconds(_ duration: Duration) -> Int {

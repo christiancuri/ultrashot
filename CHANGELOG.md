@@ -3,6 +3,12 @@
 All notable changes to UltraShot. Each `## <version>` section is used as the
 GitHub Release notes and the in-app (Sparkle) update notes.
 
+## 0.2.1
+
+- **Choose your microphone**: pick the input device in Settings › Recording or from the chevron next to the microphone button in the record panel. If the chosen device is unplugged, recordings use the system default until it is back.
+- **Smoother captures**: the shutter sound and the clipboard copy no longer block the screen for a moment after you release the selection.
+- **Auto-close now saves by default**: thumbnails that close on their own are saved to your export folder. Pick Close and Delete in Settings › Quick Access to keep the old behavior.
+
 ## 0.2.0
 
 - **Automatic updates** through Sparkle: UltraShot checks this repository's GitHub Releases and offers new versions. Turn automatic checks off in Settings › General, or check any time with **Check for Updates…** in the menu bar menu.

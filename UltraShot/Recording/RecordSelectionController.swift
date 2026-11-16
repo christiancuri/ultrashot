@@ -1,6 +1,7 @@
 import AppKit
 import CaptureKit
 import RecordingKit
+import UltraShotCore
 
 /// What the user chose to record.
 struct RecordingRequest {
@@ -107,7 +108,17 @@ final class RecordSelectionController {
         commit(view: view, selection: selection)
     }
 
+    /// The picker title of the saved microphone, e.g. "System Default (…)".
+    private static func microphoneTitle(for settings: RecordingSettings) -> String? {
+        MicrophoneCatalog.shared.options(for: settings).first { $0.deviceID == settings.microphoneDeviceID }?.title
+    }
+
     #if DEBUG
+    /// Opens the panel's microphone menu (`ULTRASHOT_DEBUG_MIC_MENU=1`).
+    func debugShowMicrophoneMenu() {
+        panel.showMicrophoneMenu()
+    }
+
     /// Turns on window pick mode and hovers `point` (local to `screen`), for screenshots.
     func debugHover(at point: CGPoint, on screen: NSScreen) {
         guard let view = session.view(for: screen) else { return }
@@ -168,6 +179,20 @@ final class RecordSelectionController {
         panel.onMicrophoneChanged = { [weak self] isOn in
             self?.model?.settings.recording.microphone = isOn
             self?.refreshPanel()
+        }
+        panel.microphoneMenuProvider = { [weak self] in
+            let catalog = MicrophoneCatalog.shared
+            catalog.refresh()
+            let settings = self?.model?.settings.recording.withDebugMicrophoneOverrides ?? RecordingSettings()
+            return RecordPanelView.MicrophoneMenu(options: catalog.options(for: settings), selectedID: settings.microphoneDeviceID)
+        }
+        panel.onMicrophoneSelected = { [weak self] deviceID in
+            guard let self, let model else { return }
+            var recording = model.settings.recording
+            MicrophoneCatalog.shared.select(deviceID, in: &recording)
+            recording.microphone = true // picking a device means recording it
+            model.settings.recording = recording
+            refreshPanel()
         }
         panel.onSystemAudioChanged = { [weak self] isOn in
             self?.model?.settings.recording.systemAudio = isOn
@@ -237,13 +262,14 @@ final class RecordSelectionController {
     }
 
     private func refreshPanel() {
-        let settings = model?.settings.recording
+        let settings = model?.settings.recording.withDebugMicrophoneOverrides
         let selection = host?.selection
         panel.update(RecordPanelView.State(
             selectionSize: selection?.size,
             windowMode: windowMode,
             windowPicked: picked != nil,
             microphone: settings?.microphone ?? false,
+            microphoneTitle: settings.flatMap { Self.microphoneTitle(for: $0) },
             systemAudio: settings?.systemAudio ?? false
         ))
         guard let view = host else { return }

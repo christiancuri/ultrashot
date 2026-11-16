@@ -28,10 +28,10 @@ extension AppModel {
             }
         }
         if plan.clipboard != .none {
-            copyToClipboard(item)
+            PerfTrace.measure("clipboard") { copyToClipboard(item) }
         }
         if showThumbnail {
-            thumbnails.show(item)
+            PerfTrace.measure("thumbnail.show") { thumbnails.show(item) }
         } else {
             deleteIfUnheld(item.fileURL)
         }
@@ -128,17 +128,17 @@ extension AppModel {
 
     /// Copies `item` to the clipboard: image data for screenshots, a file reference for
     /// recordings (which then keeps the file until the next capture replaces the clipboard).
+    /// Image data lands a moment later: it is encoded off the main actor.
     func copyToClipboard(_ item: CapturedItem) {
         let clipboard = Clipboard.current
         switch item.kind {
         case .screenshot:
             do {
-                try clipboard.writeImage(contentsOf: item.fileURL)
+                try clipboard.writeImage(contentsOf: item.fileURL) { [weak self] in self?.setClipboardFile(nil) }
             } catch {
                 Log.app.error("copy failed: \(error.localizedDescription, privacy: .public)")
                 return
             }
-            setClipboardFile(nil)
         case .recording:
             clipboard.writeFileURL(item.fileURL)
             setClipboardFile(item.fileURL)

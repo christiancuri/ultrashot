@@ -21,7 +21,7 @@ struct SettingsTests {
         #expect(quickAccess.moveToActiveScreen)
         #expect(quickAccess.overlaySize == 2)
         #expect(quickAccess.autoClose)
-        #expect(quickAccess.autoCloseAction == .close)
+        #expect(quickAccess.autoCloseAction == .saveAndClose)
         #expect(quickAccess.autoCloseInterval == 30)
         #expect(quickAccess.closeAfterDragging)
 
@@ -102,7 +102,7 @@ struct SettingsTests {
         """#
         let settings = try decodeSettings(json)
         #expect(settings.quickAccess.position == .left)
-        #expect(settings.quickAccess.autoCloseAction == .close)
+        #expect(settings.quickAccess.autoCloseAction == .saveAndClose)
         #expect(!settings.quickAccess.autoClose, "valid siblings survive")
         #expect(settings.screenshots.format == .png)
         #expect(!settings.screenshots.windowShadow)
@@ -169,7 +169,8 @@ struct SettingsTests {
         #expect(Set(object.keys) == ["schemaVersion", "general", "quickAccess", "screenshots", "recording", "advanced"])
         let recording = try #require(object["recording"] as? [String: Any])
         #expect(recording.keys.contains("microphoneDeviceID"), "nil optionals are written as null")
-        #expect(recording.count == 7)
+        #expect(recording.keys.contains("microphoneDeviceName"))
+        #expect(recording.count == 8)
     }
 
     @Test func codableRoundTrip() throws {

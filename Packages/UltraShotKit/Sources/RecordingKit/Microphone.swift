@@ -50,4 +50,9 @@ extension ScreenRecorder {
         .devices
         .map { MicrophoneDevice(id: $0.uniqueID, name: $0.localizedName) }
     }
+
+    /// The system default audio input (what `microphoneDeviceID == nil` records), if any.
+    public nonisolated static func defaultMicrophone() -> MicrophoneDevice? {
+        AVCaptureDevice.default(for: .audio).map { MicrophoneDevice(id: $0.uniqueID, name: $0.localizedName) }
+    }
 }

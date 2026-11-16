@@ -121,7 +121,7 @@ final class CaptureSession {
     private func finish(_ result: Result, closeOverlay: Bool) {
         guard !finished else { return }
         finished = true
-        if closeOverlay { overlay.close() }
+        if closeOverlay { PerfTrace.measure("overlay.close") { overlay.close() } }
         onFinish?(result)
     }
 

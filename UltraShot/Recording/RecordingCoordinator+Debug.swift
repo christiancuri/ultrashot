@@ -98,6 +98,13 @@ extension RecordingCoordinator {
                     on: screen
                 )
             }
+            if ProcessInfo.processInfo.environment["ULTRASHOT_DEBUG_MIC_MENU"] == "1" {
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(1500))
+                    Log.recording.info("debug: opening the microphone menu")
+                    controller.debugShowMicrophoneMenu()
+                }
+            }
             return
         }
         Log.recording.info("autorecord: \(String(describing: auto.area), privacy: .public) for \(auto.seconds) s, pauses \(auto.pauses)")

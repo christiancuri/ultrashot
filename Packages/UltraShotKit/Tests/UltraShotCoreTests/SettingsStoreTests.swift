@@ -30,7 +30,7 @@ struct SettingsStoreTests {
         settings.general.playSounds = false
         settings.general.exportFolderPath = "~/Pictures"
         settings.quickAccess.autoCloseInterval = 120
-        settings.quickAccess.autoCloseAction = .saveAndClose
+        settings.quickAccess.autoCloseAction = .close
         settings.screenshots.format = .jpeg
         settings.screenshots.jpegQuality = 0.5
         settings.recording.frameRate = 60

@@ -24,14 +24,15 @@ final class RecordingPanelBackground: NSView {
 final class RecordingIconButton: NSButton {
     private let isToggle: Bool
 
-    init(symbol: String, label: String, toggle: Bool, side: CGFloat = 30) {
+    /// `side` sets the height (`side - 4`) and, unless `width` is given, the width.
+    init(symbol: String, label: String, toggle: Bool, side: CGFloat = 30, width: CGFloat? = nil, pointSize: CGFloat = 14) {
         isToggle = toggle
         super.init(frame: .zero)
         setButtonType(toggle ? .pushOnPushOff : .momentaryChange)
         isBordered = false
         imagePosition = .imageOnly
         imageScaling = .scaleProportionallyDown
-        symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 14, weight: .medium)
+        symbolConfiguration = NSImage.SymbolConfiguration(pointSize: pointSize, weight: .medium)
         setSymbol(symbol)
         toolTip = label
         setAccessibilityLabel(label)
@@ -40,7 +41,7 @@ final class RecordingIconButton: NSButton {
         layer?.cornerCurve = .continuous
         translatesAutoresizingMaskIntoConstraints = false
         NSLayoutConstraint.activate([
-            widthAnchor.constraint(equalToConstant: side),
+            widthAnchor.constraint(equalToConstant: width ?? side),
             heightAnchor.constraint(equalToConstant: side - 4),
         ])
         refreshAppearance()
